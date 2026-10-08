@@ -108,3 +108,22 @@ python test.py
 
 This uses the supplied pretrained DAE model and sample data.
 Model training is not required.
+
+## Full DEPA end-to-end verification (1,272 genes)
+
+The complete DTW-MDS-K-means (K=6) workflow was executed
+successfully on all 1,272 candidate genes.
+
+- Execution time: 8.89 minutes
+- DTW maximum absolute error vs. archived matrix: 0.0
+- DTW mean absolute error vs. archived matrix: 0.0
+- MDS pairwise-distance correlation: 0.9998177859
+- K-means adjusted Rand index (ARI): 0.98975674
+- K-means normalized mutual information (NMI): 0.98545060
+- Matched cluster assignments after label alignment: 1,266/1,272 (99.53%)
+
+The complete pipeline executed successfully, but the
+recomputed MDS and K-means results are not numerically
+identical to the archived outputs.
+
+The original DTW distance matrix was reproduced exactly.
