@@ -3,3 +3,4 @@ __pycache__/
 .venv/
 reconstruction_errors.csv
 selected_cell_indices.csv
+results/

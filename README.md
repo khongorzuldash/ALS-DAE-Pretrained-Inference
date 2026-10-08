@@ -93,8 +93,8 @@ Generated files:
 - `K6_gene_clusters.csv`
 
 The complete calculation may be computationally expensive.
-The full script has passed syntax validation but has not yet
-been verified by a completed end-to-end execution.
+The full pipeline was successfully executed on all 1,272 genes.
+See the end-to-end verification results below.
 
 MDS results may differ slightly across scikit-learn versions.
 Consequently, the regenerated K=6 labels may not exactly
