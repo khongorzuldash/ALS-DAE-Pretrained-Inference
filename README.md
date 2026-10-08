@@ -25,3 +25,86 @@ The input is normalized using saved training parameters.
 This 100-cell example demonstrates inference, not independent validation.
 Original dataset: GEO GSE244263.
 Only load trusted model files.
+
+## DEPA reproducibility (ALS progression)
+
+DEPA analyzes 1,272 genes across 40 samples.
+
+### Original pipeline
+
+1. Gene-wise z-score normalization.
+2. DTW with absolute-distance cost and window=5.
+3. Two-dimensional metric MDS, random_state=42.
+4. K-means: K=6, random_state=42, n_init=200.
+
+### Verification
+
+Run: `python test_depa.py`
+
+Expected results:
+- Genes: 1,272
+- DTW pairs tested: 45
+- DTW maximum error: approximately 1.93e-6
+- K-means ARI: 1.0
+- Return code: 0
+
+The test recalculates DTW for 45 gene pairs and reproduces
+K-means using the archived MDS coordinates.
+
+It does not recompute the complete DTW matrix or MDS embedding.
+Independent MDS recomputation produced a pairwise-distance
+correlation of 0.999818 and clustering ARI of 0.989757.
+
+### Data files
+
+The `data/depa/` directory contains the gene-wise z-score input,
+DTW distance matrix, MDS coordinates, and K=6 cluster assignments.
+
+The 100-cell pretrained DAE inference example is separate
+and does not regenerate the 1,272-gene DEPA input.
+
+## Running the complete DEPA pipeline
+
+The repository provides two DEPA execution modes:
+
+### 1. Verify archived results (recommended first)
+
+```bash
+python test_depa.py
+```
+
+This verifies 45 DTW gene pairs and reproduces the archived
+K=6 cluster memberships (expected ARI = 1.0).
+
+### 2. Recompute DTW, MDS and K-means
+
+```bash
+python run_depa_full.py
+```
+
+Input: `data/depa/DTW_input_P005_gene_by_sample_zscore.csv`
+
+Output directory: `results/depa_full/`
+
+Generated files:
+
+- `DTW_distance_matrix.csv`
+- `MDS_coordinates.csv`
+- `K6_gene_clusters.csv`
+
+The complete calculation may be computationally expensive.
+The full script has passed syntax validation but has not yet
+been verified by a completed end-to-end execution.
+
+MDS results may differ slightly across scikit-learn versions.
+Consequently, the regenerated K=6 labels may not exactly
+match the archived cluster memberships.
+
+### Pretrained DAE inference
+
+```bash
+python test.py
+```
+
+This uses the supplied pretrained DAE model and sample data.
+Model training is not required.
