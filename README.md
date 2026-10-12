@@ -1,129 +1,119 @@
-# ALS DAE Pretrained Inference Demo
+# ALS DAE–DEPA Analysis Pipeline
 
-Inference-only demonstration using a pretrained denoising autoencoder.
-No model training is performed.
+## Research code and example data
 
-## Contents
-- model/FULL_HVG3000_DAE_best.keras: pretrained DAE
-- model/gene_min.npy: original normalization minimum
-- model/gene_range.npy: original normalization range
-- data/sample_logNorm_100cells.npz: 100 example cells
-- data/HVG3000_genes.csv: ordered 3000 input genes
-- test.py: reconstruction error and lowest-20-percent selection
+This repository provides the computational code used in our amyotrophic lateral sclerosis (ALS) study, together with a pretrained denoising autoencoder (DAE) model, supporting files, and example data for demonstrating the analysis workflow.
 
-## Run
-Install: pip install -r requirements.txt
-Execute: python test.py
+The original study was conducted using the full discovery dataset (GEO: **GSE244263**), comprising **458,226 cells**. Cells were ranked according to their DAE reconstruction errors, and **91,646 cells** with the lowest reconstruction errors (20%) were retained for the primary downstream analysis.
 
-## Output
-- reconstruction_errors.csv
-- selected_cell_indices.csv
+The example data included in this repository are provided to demonstrate code execution and do not replace the full dataset used in the original study.
 
-## Notes
-Input genes must match the original HVG3000 order.
-The input is normalized using saved training parameters.
-This 100-cell example demonstrates inference, not independent validation.
-Original dataset: GEO GSE244263.
-Only load trusted model files.
+## Analysis overview
 
-## DEPA reproducibility (ALS progression)
+The study workflow comprises two main components:
 
-DEPA analyzes 1,272 genes across 40 samples.
+1. **DAE-based cell prioritization:** A DAE was trained on the full discovery dataset to calculate cell-level reconstruction errors. Cells with the lowest errors were prioritized for downstream discovery analysis. Alternative cell-selection thresholds were evaluated in sensitivity analyses.
+2. **Dynamic Expression Pattern Analysis (DEPA):** Candidate gene-expression profiles were analyzed using dynamic time warping (DTW), multidimensional scaling (MDS), and K-means clustering to identify progression-associated transcriptional programs.
 
-### Original pipeline
+## Repository contents
 
-1. Gene-wise z-score normalization.
-2. DTW with absolute-distance cost and window=5.
-3. Two-dimensional metric MDS, random_state=42.
-4. K-means: K=6, random_state=42, n_init=200.
+### Pretrained DAE inference example
 
-### Verification
+| File | Description |
+| --- | --- |
+| `model/FULL_HVG3000_DAE_best.keras` | Pretrained DAE model supplied for the inference example |
+| `model/gene_min.npy` | Saved gene-wise normalization parameter |
+| `model/gene_range.npy` | Saved gene-wise normalization parameter |
+| `data/HVG3000_genes.csv` | Ordered input-gene list for the pretrained model |
+| `data/sample_logNorm_100cells.npz` | Example expression data for 100 cells |
+| `test.py` | Loads the pretrained model, calculates reconstruction errors, and demonstrates low-error cell selection |
 
-Run: `python test_depa.py`
+The pretrained `.keras` model is used for the supplied inference example; running `test.py` does **not** retrain the DAE. The 100-cell example is for demonstrating execution and is not the full discovery dataset.
 
-Expected results:
-- Genes: 1,272
-- DTW pairs tested: 45
-- DTW maximum error: approximately 1.93e-6
-- K-means ARI: 1.0
-- Return code: 0
+### DEPA analysis
 
-The test recalculates DTW for 45 gene pairs and reproduces
-K-means using the archived MDS coordinates.
+| File or directory | Description |
+| --- | --- |
+| `run_depa_full.py` | DTW–MDS–K-means analysis pipeline |
+| `test_depa.py` | Utility for checking the supplied DEPA files and workflow |
+| `data/depa/` | Processed expression matrix and reference files for DEPA |
 
-It does not recompute the complete DTW matrix or MDS embedding.
-Independent MDS recomputation produced a pairwise-distance
-correlation of 0.999818 and clustering ARI of 0.989757.
+The DEPA input contains **1,272 candidate genes across 40 samples**. It is provided as a processed input for the gene-level analysis and is separate from the 100-cell DAE inference example.
 
-### Data files
+## Installation
 
-The `data/depa/` directory contains the gene-wise z-score input,
-DTW distance matrix, MDS coordinates, and K=6 cluster assignments.
-
-The 100-cell pretrained DAE inference example is separate
-and does not regenerate the 1,272-gene DEPA input.
-
-## Running the complete DEPA pipeline
-
-The repository provides two DEPA execution modes:
-
-### 1. Verify archived results (recommended first)
+Install the required Python packages:
 
 ```bash
-python test_depa.py
+pip install -r requirements.txt
 ```
 
-This verifies 45 DTW gene pairs and reproduces the archived
-K=6 cluster memberships (expected ARI = 1.0).
-
-### 2. Recompute DTW, MDS and K-means
-
-```bash
-python run_depa_full.py
-```
-
-Input: `data/depa/DTW_input_P005_gene_by_sample_zscore.csv`
-
-Output directory: `results/depa_full/`
-
-Generated files:
-
-- `DTW_distance_matrix.csv`
-- `MDS_coordinates.csv`
-- `K6_gene_clusters.csv`
-
-The complete calculation may be computationally expensive.
-The full pipeline was successfully executed on all 1,272 genes.
-See the end-to-end verification results below.
-
-MDS results may differ slightly across scikit-learn versions.
-Consequently, the regenerated K=6 labels may not exactly
-match the archived cluster memberships.
-
-### Pretrained DAE inference
+## Run the pretrained DAE example
 
 ```bash
 python test.py
 ```
 
-This uses the supplied pretrained DAE model and sample data.
-Model training is not required.
+The script loads the supplied pretrained model and example data, calculates per-cell reconstruction errors, and demonstrates selection of the lowest-error 20% of example cells.
 
-## Full DEPA end-to-end verification (1,272 genes)
+Expected output files:
 
-The complete DTW-MDS-K-means (K=6) workflow was executed
-successfully on all 1,272 candidate genes.
+- `reconstruction_errors.csv`
+- `selected_cell_indices.csv`
 
-- Execution time: 8.89 minutes
-- DTW maximum absolute error vs. archived matrix: 0.0
-- DTW mean absolute error vs. archived matrix: 0.0
-- MDS pairwise-distance correlation: 0.9998177859
-- K-means adjusted Rand index (ARI): 0.98975674
-- K-means normalized mutual information (NMI): 0.98545060
-- Matched cluster assignments after label alignment: 1,266/1,272 (99.53%)
+**Important:** Input genes must follow the order specified in `data/HVG3000_genes.csv`. Use the normalization files provided with the pretrained model. The selected cells from this example are not the 91,646 cells reported in the original full-data analysis.
 
-The complete pipeline executed successfully, but the
-recomputed MDS and K-means results are not numerically
-identical to the archived outputs.
+## Run DEPA
 
-The original DTW distance matrix was reproduced exactly.
+The supplied DEPA pipeline analyzes the processed **1,272-gene × 40-sample** expression matrix using DTW, MDS, and K-means clustering (**K = 6**).
+
+Run the analysis:
+
+```bash
+python run_depa_full.py
+```
+
+Input file:
+
+```text
+data/depa/DTW_input_P005_gene_by_sample_zscore.csv
+```
+
+Output directory:
+
+```text
+results/depa_full/
+```
+
+Expected output files:
+
+- `DTW_distance_matrix.csv`
+- `MDS_coordinates.csv`
+- `K6_gene_clusters.csv`
+
+The full DTW–MDS–K-means calculation may require substantial computing time. The repository also includes the corresponding reference files.
+
+An optional utility can be run to check the supplied DEPA files:
+
+```bash
+python test_depa.py
+```
+
+## Full-data DAE methodology
+
+In the original full-data analysis, the DAE was trained on a cell-by-gene expression matrix constructed from the discovery dataset using **3,000 highly variable genes**. The full-data DAE training implementation used **PyTorch**, with an encoder of **1,024 and 256 hidden units** and a **64-dimensional latent representation**. Training used **20% dropout**, **15% input masking noise**, the **Adam** optimizer, and **mean squared error** reconstruction loss. The training settings were **25 epochs**, **batch size 512**, **learning rate 0.001**, and **weight decay 0.00001**.
+
+After training, reconstruction errors were calculated using unmasked input profiles. Cells were ranked by reconstruction error, and the lowest-error 20% were selected for primary discovery analysis. Sensitivity analyses considered other reconstruction-error subsets.
+
+These full-data training settings describe the original study methodology. The separately supplied pretrained `.keras` file is provided for the public inference demonstration; its file format and example execution should not be confused with the full-data PyTorch training procedure.
+
+## Data availability
+
+The discovery dataset is identified by GEO accession **GSE244263**. The example data and processed DEPA inputs supplied here support execution of the included analysis code. They do not replace the complete discovery data or constitute an independent validation cohort.
+
+## Code and archive
+
+- **GitHub:** https://github.com/khongorzuldash/ALS-DAE-Pretrained-Inference
+- **Zenodo:** https://doi.org/10.5281/zenodo.23233282
+
+For the study design, full analytical methods, and biological interpretation, please refer to the associated manuscript and supplementary information.
